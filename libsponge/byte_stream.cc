@@ -10,7 +10,7 @@
 using namespace std;
 
 ByteStream::ByteStream(const size_t capacity)
-    : _capacity(capacity), _buffer(),  _read_bytes(0), _end(false), _written_bytes(0) {}
+    : _capacity(capacity), _buffer(),  _readBytes(0), _end(false), _writtenBytes(0) {}
 
 size_t ByteStream::write(const string &data) {
     auto canWrite = _capacity - _buffer.size();
@@ -19,7 +19,7 @@ size_t ByteStream::write(const string &data) {
         _buffer.push_back(data[i]);
     }
 
-    _written_bytes += realWrite;
+    _writtenBytes += realWrite;
     return realWrite;
 }
 
@@ -45,7 +45,7 @@ void ByteStream::pop_output(const size_t len) {
     for (size_t i = 0; i < len; i++) {
         _buffer.pop_front();
     }
-    _read_bytes += len;
+    _readBytes += len;
 }
 
 //! Read (i.e., copy and then pop) the next "len" bytes of the stream
@@ -74,8 +74,8 @@ size_t ByteStream::buffer_size() const { return _buffer.size(); }
 bool ByteStream::buffer_empty() const { return _buffer.empty(); }
 
 bool ByteStream::eof() const { return _buffer.empty() && _end; }
-size_t ByteStream::bytes_written() const { return _written_bytes; }
+size_t ByteStream::bytes_written() const { return _writtenBytes; }
 
-size_t ByteStream::bytes_read() const { return _read_bytes; }
+size_t ByteStream::bytes_read() const { return _readBytes; }
 
 size_t ByteStream::remaining_capacity() const { return _capacity - _buffer.size(); }
