@@ -20,7 +20,6 @@ class StreamReassembler {
     std::deque<char> _buffer;  // sub_strings storage
     std::deque<bool> _bitmap;  // indicate sub_strings
 
-    size_t ack_index() const;  // next unreassemble index
     void outPut();
 
   public:
@@ -54,6 +53,8 @@ class StreamReassembler {
     //! \brief Is the internal state empty (other than the output stream)?
     //! \returns `true` if no substrings are waiting to be assembled
     bool empty() const;
+
+    size_t ack_index() const;  // next unreassemble index
 };
 
 #endif  // SPONGE_LIBSPONGE_STREAM_REASSEMBLER_HH
