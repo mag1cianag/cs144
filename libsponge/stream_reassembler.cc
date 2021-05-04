@@ -23,44 +23,47 @@ StreamReassembler::StreamReassembler(const size_t capacity)
 //! possibly out-of-order, from the logical stream, and assembles any newly
 //! contiguous substrings and writes them into the output stream in order.
 void StreamReassembler::push_substring(const string &data, const size_t index, const bool eof) {
-    if (eof)
-        _eof = true;
+    // exceed  upper bound
+    if (index >= _capacity + _unassStart)
+        return;
 
-    // check
-    auto len = data.length();
-    if (len == 0 && _unassSize == 0 && _eof) {
+    if (eof) {
+        _eof = true;
+    }
+
+    size_t len = data.length();
+    if (len == 0 && _eof && _unassSize == 0) {
         _output.end_input();
         return;
     }
-
-    if (index >= _capacity + _unassStart)
-        return;
     if (index >= _unassStart) {
-        auto off = index - _unassStart;
-        auto readSize = min(len, _capacity - _output.buffer_size() - off);
-        if (readSize < len)
+        size_t off = index - _unassStart;
+        size_t readLen = min(len, _capacity - _output.buffer_size() - off);
+        if (readLen < len)
             _eof = false;
-        for (size_t i = 0; i < readSize; i++) {
+        for (size_t i = 0; i < readLen; i++) {
             if (_bitmap[i + off])
                 continue;
             _buffer[i + off] = data[i];
             _bitmap[i + off] = true;
             ++_unassSize;
         }
-    } else if (index + len > _unassStart) {
+    } else if (len + index > _unassStart) {
         // overlap
-        auto off = _unassStart - index;
-        auto readSize = min(len - off, _capacity - _output.buffer_size());
-        if (readSize < len - off)
+        size_t off = _unassStart - index;
+        size_t readLen = min(len - off, _capacity - _output.buffer_size());
+        if (readLen < len - off)
             _eof = false;
-        for (size_t i = 0; i < readSize; i++) {
+        for (size_t i = 0; i < readLen; i++) {
             if (_bitmap[i])
                 continue;
-            _buffer[i] = data[i + off];
             _bitmap[i] = true;
+            _buffer[i] = data[i + off];
             ++_unassSize;
         }
     }
+
+    // write into _output
     outPut();
     if (_eof && _unassSize == 0) {
         _output.end_input();
@@ -73,17 +76,18 @@ bool StreamReassembler::empty() const { return _unassSize == 0; }
 
 size_t StreamReassembler::ack_index() const { return _unassStart; }
 void StreamReassembler::outPut() {
-    string convey;
+    string ans;
+    // write accumulative
     while (_bitmap.front()) {
-        convey += _buffer.front();
-        _bitmap.pop_front();
+        ans += _buffer.front();
         _buffer.pop_front();
-        _bitmap.push_back(false);
+        _bitmap.pop_front();
         _buffer.push_back('\0');
+        _bitmap.push_back(false);
     }
-    if (convey.length()) {
-        _output.write(convey);
-        _unassStart += convey.length();
-        _unassSize -= convey.length();
+    if (!ans.empty()) {
+        _output.write(ans);
+        _unassStart += ans.length();
+        _unassSize -= ans.length();
     }
 }

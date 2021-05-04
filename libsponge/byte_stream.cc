@@ -1,7 +1,5 @@
 #include "byte_stream.hh"
 
-// Dummy implementation of a flow-controlled in-memory byte stream.
-
 // For Lab 0, please replace with a real implementation that passes the
 // automated checks run by `make check_lab0`.
 
@@ -12,6 +10,12 @@ using namespace std;
 ByteStream::ByteStream(const size_t capacity)
     : _capacity(capacity), _buffer(),  _readBytes(0), _end(false), _writtenBytes(0) {}
 
+/**
+ * @brief write data into steam 
+ * 
+ * @param data 
+ * @return size_t 
+ */
 size_t ByteStream::write(const string &data) {
     auto canWrite = _capacity - _buffer.size();
     auto realWrite = min(canWrite, data.length());
@@ -37,6 +41,7 @@ string ByteStream::peek_output(const size_t len) const {
 
 //! \param[in] len bytes will be removed from the output side of the buffer
 void ByteStream::pop_output(const size_t len) {
+    //check
     if (len > _buffer.size()) {
         set_error();
         return;
