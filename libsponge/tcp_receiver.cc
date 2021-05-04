@@ -36,6 +36,7 @@ void TCPReceiver::segment_received(const TCPSegment &seg) {
 optional<WrappingInt32> TCPReceiver::ackno() const {
     if (!_syned)
         return nullopt;
+    // ack_index() will stable
     return wrap(_reassembler.ack_index() + 1 + (_reassembler.empty() && _fined), _isn);
 }
 

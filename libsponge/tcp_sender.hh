@@ -9,6 +9,34 @@
 #include <functional>
 #include <queue>
 
+class TCPTimer {
+  private:
+    unsigned int _rto;
+    size_t _elapsed;
+    bool _start;
+
+  public:
+    TCPTimer(unsigned int init_timeout) : _rto(init_timeout), _elapsed(0), _start(false) {}
+
+    bool isStarted() { return _start; }
+
+    void timeElapse(const size_t ms) { _elapsed += ms; }
+
+    bool isPassed() { return _elapsed >= _rto; }
+
+    void doubleRto() { _rto = _rto << 1; }
+
+    void resetElapsed() { _elapsed = 0; }
+
+    void startTimer() {
+        _start = true;
+        _elapsed = 0;
+    }
+    void shutdown() { _start = false; }
+
+    void setRto(size_t newRto) { _rto = newRto; }
+};
+
 //! \brief The "sender" part of a TCP implementation.
 
 //! Accepts a ByteStream, divides it up into segments and sends the
@@ -31,6 +59,29 @@ class TCPSender {
 
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
+
+    // if SYN sent
+    bool _syned;
+
+    // if FIN sent
+    bool _fined;
+
+    uint64_t _bytes_in_flight;
+
+    uint16_t _receiver_wz;
+
+    uint16_t _receiver_avail;
+
+    uint16_t _consecutive_retransmissions;
+
+    TCPTimer _timer;
+
+    // store may be resend
+    std::queue<TCPSegment> _outstanding{};
+
+    void _send_segment(TCPSegment &seg);
+
+    bool _check_ackno(uint64_t abs_ackno);
 
   public:
     //! Initialize a TCPSender
