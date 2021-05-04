@@ -1,5 +1,6 @@
 #include "wrapping_integers.hh"
 
+#include <iostream>
 // Dummy implementation of a 32-bit wrapping integer
 
 // For Lab 2, please replace with a real implementation that passes the
@@ -10,7 +11,7 @@ using namespace std;
 //! Transform an "absolute" 64-bit sequence number (zero-indexed) into a WrappingInt32
 //! \param n The input absolute 64-bit sequence number
 //! \param isn The initial sequence number
-WrappingInt32 wrap(uint64_t n, WrappingInt32 isn) { return isn + uint32_t(n); }
+WrappingInt32 wrap(uint64_t n, WrappingInt32 isn) { return WrappingInt32(isn + uint32_t(n)); }
 
 //! Transform a WrappingInt32 into an "absolute" 64-bit sequence number (zero-indexed)
 //! \param n The relative sequence number
@@ -30,12 +31,13 @@ uint64_t unwrap(WrappingInt32 n, WrappingInt32 isn, uint64_t checkpoint) {
     } else {
         ans1 = uint64_t(n - isn);
     }
-    if (ans1 >= checkpoint)
+    if (ans1 >= checkpoint) {
         return ans1;
-    ans1 |= (checkpoint >> 32) << 32;
+    }
+    ans1 |= checkpoint >> 32 << 32;
     while (ans1 <= checkpoint) {
-        ans1 += (1LL << 32);
+        ans1 += 1LL << 32;
     }
     ans2 = ans1 - (1LL << 32);
-    return (checkpoint - ans2 < ans1 - checkpoint) ? ans2 : ans1;
+    return ans1 - checkpoint > checkpoint - ans2 ? ans2 : ans1;
 }
