@@ -1,6 +1,7 @@
 #ifndef SPONGE_LIBSPONGE_TCP_SENDER_HH
 #define SPONGE_LIBSPONGE_TCP_SENDER_HH
 
+#include "buffer.hh"
 #include "byte_stream.hh"
 #include "tcp_config.hh"
 #include "tcp_segment.hh"
@@ -12,29 +13,22 @@
 class TCPTimer {
   private:
     unsigned int _rto;
-    size_t _elapsed;
+    unsigned int _elapsed;
     bool _start;
 
   public:
-    TCPTimer(unsigned int init_timeout) : _rto(init_timeout), _elapsed(0), _start(false) {}
-
-    bool isStarted() { return _start; }
-
-    void timeElapse(const size_t ms) { _elapsed += ms; }
-
-    bool isPassed() { return _elapsed >= _rto; }
-
-    void doubleRto() { _rto = _rto << 1; }
-
-    void resetElapsed() { _elapsed = 0; }
-
-    void startTimer() {
+    TCPTimer(unsigned int rto) : _rto(rto), _elapsed(0), _start{false} {}
+    void start() {
         _start = true;
         _elapsed = 0;
     }
     void shutdown() { _start = false; }
-
-    void setRto(size_t newRto) { _rto = newRto; }
+    bool isStarted() const { return _start; }
+    void timeElapse(const size_t ms) { _elapsed += ms; }
+    bool shouldResend() { return _elapsed >= _rto; }
+    void setElapsed(unsigned int e) { _elapsed = e; }
+    void setRTO(unsigned int r) { _rto = r; }
+    void doubleRTO() { _rto = _rto * 2; }
 };
 
 //! \brief The "sender" part of a TCP implementation.
@@ -60,28 +54,19 @@ class TCPSender {
     //! the (absolute) sequence number for the next byte to be sent
     uint64_t _next_seqno{0};
 
-    // if SYN sent
-    bool _syned;
-
-    // if FIN sent
-    bool _fined;
-
-    uint64_t _bytes_in_flight;
-
-    uint16_t _receiver_wz;
-
-    uint16_t _receiver_avail;
-
-    uint16_t _consecutive_retransmissions;
-
-    TCPTimer _timer;
-
-    // store may be resend
+    bool _syned{false};
+    bool _fined{false};
+    uint64_t _bytes_in_flight{0};
+    uint16_t _receiver_wz{0};
+    uint16_t _receiver_avail{0};
+    uint16_t _consecutive_retransmissions{0};
     std::queue<TCPSegment> _outstanding{};
-
-    void _send_segment(TCPSegment &seg);
+    TCPTimer _timer;
+    // Lab4 modify:
+    // bool _fill_window_called_by_ack_received{false};
 
     bool _check_ackno(uint64_t abs_ackno);
+    void _send_segment(TCPSegment &seg);
 
   public:
     //! Initialize a TCPSender
